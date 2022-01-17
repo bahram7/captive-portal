@@ -1,0 +1,39 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "packageName": "org.sohagroup.bsi.smsservice"
+    },
+    "jhipsterVersion": "6.10.5",
+    "applicationType": "microservice",
+    "baseName": "smsService",
+    "packageName": "org.sohagroup.bsi.smsservice",
+    "packageFolder": "org/sohagroup/bsi/smsservice",
+    "serverPort": "8085",
+    "authenticationType": "uaa",
+    "uaaBaseName": "sinapAuth",
+    "cacheProvider": "infinispan",
+    "enableHibernateCache": false,
+    "websocket": false,
+    "databaseType": "no",
+    "devDatabaseType": "no",
+    "prodDatabaseType": "no",
+    "searchEngine": false,
+    "messageBroker": false,
+    "serviceDiscoveryType": "eureka",
+    "buildTool": "maven",
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "NjU2YTllNGMzOTYwZGY3MjAyZGQxOWExMDc3NTdkNzZhMDNhZjc1NGViMGNkZTdhNDkxM2RhMDhhMjBjNDQxNThhZjcwMmMzMjdiOGIzNDhlNzcwNDliOTIwMDU0MjI4NTdiNWU2NjVmMGI2MjQyOGI5NDFiZmM3ZTgwNWViNDU=",
+    "embeddableLaunchScript": false,
+    "creationTimestamp": 1642413935459,
+    "testFrameworks": ["gatling", "cucumber"],
+    "jhiPrefix": "jhi",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "enableTranslation": false,
+    "clientPackageManager": "npm",
+    "blueprints": [],
+    "skipClient": true,
+    "skipUserManagement": true
+  }
+}
