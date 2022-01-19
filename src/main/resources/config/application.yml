@@ -192,3 +192,6 @@ jhipster:
 # ===================================================================
 
 # application:
+smsService:
+  config:
+    wsdlAddress: 'http://sms.bsi.ir:89/BSaderatSendService.asmx'
