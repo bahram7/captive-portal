@@ -3,6 +3,7 @@ package org.sohagroup.bsi.smsservice.service.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class SendSMSSingleDTO implements Serializable {
 
@@ -94,5 +95,30 @@ public class SendSMSSingleDTO implements Serializable {
         isFlash = flash;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SendSMSSingleDTO that = (SendSMSSingleDTO) o;
+        return isFlash == that.isFlash && message.equals(that.message) && destinationAddress.equals(that.destinationAddress) && number.equals(that.number) && userName.equals(that.userName) && password.equals(that.password) && ipSend.equals(that.ipSend) && company.equals(that.company);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(message, destinationAddress, number, userName, password, ipSend, company, isFlash);
+    }
+
+    @Override
+    public String toString() {
+        return "SendSMSSingleDTO{" +
+            "message='" + message + '\'' +
+            ", destinationAddress='" + destinationAddress + '\'' +
+            ", number='" + number + '\'' +
+            ", userName='" + userName + '\'' +
+            ", password='" + password + '\'' +
+            ", ipSend='" + ipSend + '\'' +
+            ", company='" + company + '\'' +
+            ", isFlash=" + isFlash +
+            '}';
+    }
 }
