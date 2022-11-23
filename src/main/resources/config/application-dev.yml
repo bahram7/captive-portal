@@ -18,14 +18,14 @@ logging:
     ROOT: DEBUG
     tech.jhipster: DEBUG
     org.hibernate.SQL: DEBUG
-    org.sohagroup.mobin.captiveportal: DEBUG
+    org.sonhagroup.mobin.captiveportalservice: DEBUG
 
 eureka:
   instance:
     prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://admin:${jhipster.registry.password}@localhost:8761/eureka/
+      defaultZone: http://admin:${jhipster.registry.password}@192.168.1.112:8761/eureka/
 
 spring:
   devtools:
@@ -39,9 +39,9 @@ spring:
       indent-output: true
   cloud:
     config:
-      uri: http://admin:${jhipster.registry.password}@localhost:8761/config
+      uri: http://admin:${jhipster.registry.password}@192.168.1.112:8761/config
       # name of the config server's property source (file.yml) that we want to use
-      name: captiveportal
+      name: captiveportalservice
       profile: dev
       label: main # toggle to switch to a different version of the configuration as stored in git
       # it can be set to any label, branch or commit of the configuration source Git repository
@@ -50,6 +50,11 @@ spring:
   thymeleaf:
     cache: false
   sleuth:
+    # https://github.com/spring-projects/spring-framework/issues/27844#issuescomment-1002866885
+    # https://github.com/spring-cloud/spring-cloud-sleuth/issues/2094
+    async:
+      enabled: false
+    enabled: false
     sampler:
       probability: 1 # report 100% of traces
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
@@ -58,6 +63,11 @@ spring:
     locator:
       discovery:
         enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 8081
@@ -97,3 +107,5 @@ jhipster:
 # ===================================================================
 
 # application:
+customTokenObtainPairRequestUsername: mobin_esb
+customTokenObtainPairRequestPassword: G03TryPr5d3X^fk3

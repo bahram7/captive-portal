@@ -4,7 +4,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.sohagroup.mobin.captiveportal.CaptiveportalApp;
 import org.sohagroup.mobin.captiveportal.config.TestSecurityConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -13,6 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(classes = { CaptiveportalApp.class, TestSecurityConfiguration.class })
+@SpringBootTest(classes = { TokenApp.class, TestSecurityConfiguration.class })
 public @interface IntegrationTest {
 }

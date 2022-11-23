@@ -14,6 +14,16 @@
 # http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 # ===================================================================
 
+---
+# Conditionally disable springdoc on missing api-docs profile
+spring:
+  config:
+    activate:
+      on-profile: '!api-docs'
+springdoc:
+  api-docs:
+    enabled: false
+---
 eureka:
   client:
     enabled: true
@@ -24,8 +34,8 @@ eureka:
     instance-info-replication-interval-seconds: 10
     registry-fetch-interval-seconds: 10
   instance:
-    appname: captiveportal
-    instanceId: captiveportal:${spring.application.instance-id:${random.value}}
+    appname: captiveportalservice
+    instanceId: captiveportalservice:${spring.application.instance-id:${random.value}}
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 10
     status-page-url-path: ${management.endpoints.web.base-path}/info
@@ -53,7 +63,8 @@ management:
     web:
       base-path: /management
       exposure:
-        include: ['configprops', 'env', 'health', 'info', 'jhimetrics', 'logfile', 'loggers', 'prometheus', 'threaddump']
+        include:
+          ['configprops', 'env', 'health', 'info', 'jhimetrics', 'jhiopenapigroups', 'logfile', 'loggers', 'prometheus', 'threaddump']
   endpoint:
     health:
       show-details: when_authorized
@@ -70,6 +81,8 @@ management:
   info:
     git:
       mode: full
+    env:
+      enabled: true
   health:
     mail:
       enabled: false # When using the MailService, configure an SMTP server and set this to true
@@ -100,7 +113,7 @@ management:
 
 spring:
   application:
-    name: captiveportal
+    name: captiveportalservice
   profiles:
     # The commented value for `active` can be replaced with valid Spring profiles to load.
     # Otherwise, it will be filled in by maven when building the JAR file
@@ -120,13 +133,13 @@ spring:
     allow-bean-definition-overriding: true
   task:
     execution:
-      thread-name-prefix: captiveportal-task-
+      thread-name-prefix: captiveportalservice-task-
       pool:
         core-size: 2
         max-size: 50
         queue-capacity: 10000
     scheduling:
-      thread-name-prefix: captiveportal-scheduling-
+      thread-name-prefix: captiveportalservice-scheduling-
       pool:
         size: 2
   thymeleaf:
@@ -139,18 +152,24 @@ spring:
       client:
         provider:
           oidc:
-            issuer-uri: http://localhost:9080/auth/realms/jhipster
+            issuer-uri: http://192.168.1.115:8088/auth/realms/mobin-sso
         registration:
           oidc:
-            client-id: internal
-            client-secret: internal
-            scope: openid,profile,email
-
+            client-id: web_app
+            client-secret: web_app
+            scope: openid, profile, email, offline_access # last one for refresh tokens
+  codec:
+    max-in-memory-size: 10MB
 server:
   servlet:
     session:
       cookie:
         http-only: true
+
+springdoc:
+  show-actuator: true
+  api-docs:
+    path: /v2/api-docs
 
 # Properties to be exposed on the /info management endpoint
 info:
@@ -165,7 +184,7 @@ info:
 
 jhipster:
   clientApp:
-    name: 'captiveportalApp'
+    name: 'captiveportalserviceApp'
   # By default CORS is disabled. Uncomment to enable.
   # cors:
   #   allowed-origins: "http://localhost:8100,http://localhost:9000"
@@ -175,12 +194,12 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: captiveportal@localhost
+    from: captiveportalservice@localhost
   api-docs:
-    default-include-pattern: ${server.servlet.context-path:}/api/.*
-    management-include-pattern: ${server.servlet.context-path:}/management/.*
-    title: Captiveportal API
-    description: Captiveportal API documentation
+    default-include-pattern: ${server.servlet.context-path:}/api/**
+    management-include-pattern: ${server.servlet.context-path:}/management/**
+    title: Captiveportalservice API
+    description: Captiveportalservice API documentation
     version: 0.0.1
     terms-of-service-url:
     contact-name:
@@ -204,3 +223,23 @@ jhipster:
 # ===================================================================
 
 # application:
+#customTokenObtainPairRequestUsername: mobin_esb
+#customTokenObtainPairRequestPassword: G03TryPr5d3X^fk3
+base-url: cp-api.stg.mobinnet.net
+branches: /api/branches/
+categories: /api/categories/
+customers: /api/customers/
+dynamic-template: /api/dynamic-template/
+image-links: /api/image-links/
+payment-verify: /api/mobinnet/payment-verify/
+packages: /api/packages/
+registration_requests: /api/registration_requests/
+schema: /api/schema/
+text-links: /api/text-links/
+token: https://cp-api.stg.mobinnet.net/api/token/
+token-url: /api/token/
+mobinnet-payment-verify: /mobinnet/payment-verify/
+
+validation:
+  category: فیلد category نباید خالی باشد
+  name: فیلد name نباید خالی باشد

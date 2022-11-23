@@ -19,13 +19,13 @@ import tech.jhipster.config.JHipsterConstants;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ ApplicationProperties.class })
-public class CaptiveportalApp {
+public class TokenApp {
 
-    private static final Logger log = LoggerFactory.getLogger(CaptiveportalApp.class);
+    private static final Logger log = LoggerFactory.getLogger(TokenApp.class);
 
     private final Environment env;
 
-    public CaptiveportalApp(Environment env) {
+    public TokenApp(Environment env) {
         this.env = env;
     }
 
@@ -63,7 +63,7 @@ public class CaptiveportalApp {
      * @param args the command line arguments.
      */
     public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(CaptiveportalApp.class);
+        SpringApplication app = new SpringApplication(TokenApp.class);
         DefaultProfileUtil.addDefaultProfile(app);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);

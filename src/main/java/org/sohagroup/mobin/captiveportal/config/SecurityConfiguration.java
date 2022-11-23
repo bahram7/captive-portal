@@ -89,7 +89,7 @@ public class SecurityConfiguration {
             .pathMatchers("/api/authenticate").permitAll()
             .pathMatchers("/api/auth-info").permitAll()
             .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
-            .pathMatchers("/api/**").authenticated()
+            .pathMatchers("/api/**").permitAll()
             .pathMatchers("/management/health").permitAll()
             .pathMatchers("/management/health/**").permitAll()
             .pathMatchers("/management/info").permitAll()
