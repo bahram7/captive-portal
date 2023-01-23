@@ -19,5 +19,5 @@ public interface TokenApi {
     @ApiOperation(value = "Token")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = TokenResponseDTO.class) })
     @PostMapping(value = "/api/token")
-    Mono<ResponseEntity<TokenResponseDTO>> getToken(TokenModelRequest tokenModel);
+    Mono<TokenResponseDTO> getToken(TokenModelRequest tokenModel);
 }

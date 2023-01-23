@@ -8,12 +8,10 @@ import org.apache.logging.log4j.Logger;
 import org.sohagroup.mobin.captiveportal.config.Constants;
 import org.sohagroup.mobin.captiveportal.service.Interface.TokenService;
 import org.sohagroup.mobin.captiveportal.web.rest.model.request.TokenModelRequest;
-import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesResponse;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.TokenResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -29,11 +27,7 @@ public class TokenServiceImpl implements TokenService {
     private final Gson gson;
     private final ObjectMapper objectMapper;
 
-    public TokenServiceImpl(WebClient webClient, Gson gson) {
-        this.webClient = webClient;
-        this.gson = gson;
-        this.objectMapper = new ObjectMapper();
-    }
+    private TokenModelRequest tokenModel;
 
     @Value("mobin_esb")
     private String userName;
@@ -41,48 +35,77 @@ public class TokenServiceImpl implements TokenService {
     @Value("G03TryPr5d3X^fk3")
     private String password;
 
+    public TokenServiceImpl(WebClient webClient, Gson gson) {
+        this.webClient = webClient;
+        this.gson = gson;
+        this.objectMapper = new ObjectMapper();
+        tokenModel = new TokenModelRequest(userName, password);
+    }
+
     @Value("/api/token/")
     private String tokenUrl;
 
     @Value("${base-url}")
     private String baseUrl;
 
-    //    @Value("${branches}")
-    //    private String branchesUrl;
+    private String accessToken;
 
     @Override
-    public Mono<ResponseEntity<TokenResponseDTO>> getToken(TokenModelRequest tokenModel) {
+    public Mono<TokenResponseDTO> getToken(TokenModelRequest tokenModel) {
         try {
-            return webClient
-                .post()
-                .uri(builder -> builder.scheme(Constants.HTTPS).host(baseUrl).path(tokenUrl).build())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.justOrEmpty(tokenModel), TokenModelRequest.class)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(str -> {
-                    TokenResponseDTO tokenResponseDTO;
-                    try {
-                        tokenResponseDTO = objectMapper.readValue(str, TokenResponseDTO.class);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                    return ResponseEntity.status(HttpStatus.OK).body(tokenResponseDTO);
-                })
-                .doOnEach(logger::info)
-                .doOnError(logger::error)
-                .onErrorResume(error -> {
-                    if (error instanceof WebClientResponseException) {
-                        String message = ((WebClientResponseException) error).getResponseBodyAsString();
-                        int statusCode = ((WebClientResponseException) error).getRawStatusCode();
-                        throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build());
-                });
+            return getTokenFromTokenModelRequest(tokenModel);
         } catch (Exception e) {
             logger.error("Exception in getToken : {}", e.getMessage());
 
             throw Problem.builder().withStatus(Status.PRECONDITION_FAILED).build();
         }
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public Mono<TokenResponseDTO> getToken() {
+        try {
+            tokenModel.setPassword(password);
+            tokenModel.setUserName(userName);
+            return getTokenFromTokenModelRequest(tokenModel)
+                .doOnSuccess(tokenResponseDTO -> this.accessToken = tokenResponseDTO.getAccess());
+        } catch (Exception e) {
+            logger.error("Exception in getToken : {}", e.getMessage());
+
+            throw Problem.builder().withStatus(Status.PRECONDITION_FAILED).build();
+        }
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public Mono<TokenResponseDTO> getTokenFromTokenModelRequest(TokenModelRequest tokenModel) {
+        return webClient
+            .post()
+            .uri(builder -> builder.scheme(Constants.HTTPS).host(baseUrl).path(tokenUrl).build())
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(Mono.justOrEmpty(tokenModel), TokenModelRequest.class)
+            .retrieve()
+            .bodyToMono(String.class)
+            .map(body -> {
+                TokenResponseDTO tokenResponseDTO;
+                try {
+                    return objectMapper.readValue(body, TokenResponseDTO.class);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            })
+            .doOnEach(logger::info)
+            .doOnError(logger::error)
+            .onErrorResume(error -> {
+                if (error instanceof WebClientResponseException) {
+                    String message = ((WebClientResponseException) error).getResponseBodyAsString();
+                    int statusCode = ((WebClientResponseException) error).getRawStatusCode();
+                    throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
+                }
+                //return Mono.just(ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build());
+
+                return Mono.error(error);
+            });
     }
 }

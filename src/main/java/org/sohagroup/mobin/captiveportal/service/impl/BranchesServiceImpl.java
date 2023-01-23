@@ -12,9 +12,9 @@ import org.sohagroup.mobin.captiveportal.web.rest.model.request.BranchesRequestM
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesListResponse;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -29,11 +29,14 @@ public class BranchesServiceImpl implements BranchesService {
     private final WebClient webClient;
     private final Gson gson;
     private final ObjectMapper objectMapper;
+    private final TokenRefresh tokenRefresh;
     private final RestTemplate restTemplate;
 
-    public BranchesServiceImpl(WebClient webClient, RestTemplate restTemplate) {
+    public BranchesServiceImpl(WebClient webClient, TokenRefresh tokenRefresh, RestTemplate restTemplate) {
         this.webClient = webClient;
+        this.tokenRefresh = tokenRefresh;
         this.restTemplate = restTemplate;
+
         this.gson = new Gson();
         this.objectMapper = new ObjectMapper();
     }
@@ -46,22 +49,19 @@ public class BranchesServiceImpl implements BranchesService {
 
     @Override
     public Mono<BranchesResponse> branchesCreate(String appName, String token, Mono<BranchesRequestModel> branchesRequestModel) {
+        logger.info("enter to createBranches in BranchesServiceImpl with body : {}", branchesRequestModel);
         try {
             return webClient
                 .post()
                 .uri(builder -> builder.scheme(Constants.HTTPS).host(baseUrl).path(branchesUrl).build())
-                .headers(h ->
-                    h.setBearerAuth(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY5MTkzMjAxLCJpYXQiOjE2NjkxOTI2MDEsImp0aSI6IjhhMzgyZWMzMTc5MjQ4NmNiZTZjOGNkNTA4OTVkNmEwIiwidXNlcl9pZCI6NiwiYWNjZXNzX3Rva2VuX2xpZmV0aW1lIjo2MDAsInVzZXJuYW1lIjoibW9iaW5fZXNiIn0.XIXe1aOQNRunZc50q844HKuT5fJagigEy5Gj5XeyjwA"
-                    )
-                )
+                .headers(h -> h.setBearerAuth(tokenRefresh.getAccessToken()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(branchesRequestModel, BranchesRequestModel.class)
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(str -> {
+                .map(body -> {
                     try {
-                        return (objectMapper.readValue(str, BranchesResponse.class));
+                        return (objectMapper.readValue(body, BranchesResponse.class));
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e.getMessage());
                     }
@@ -75,7 +75,7 @@ public class BranchesServiceImpl implements BranchesService {
                         throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
                     }
 
-                    return Mono.empty();
+                    return Mono.error(error);
                 });
         } catch (Exception e) {
             logger.error("Exception in branchesCreate : {}", e.getMessage());
@@ -85,7 +85,7 @@ public class BranchesServiceImpl implements BranchesService {
     }
 
     @Override
-    public Mono<ResponseEntity<BranchesListResponse>> getBranchesList(
+    public Mono<BranchesListResponse> getBranchesList(
         String appName,
         String token,
         String categoryCustomerCrmEnglishName,
@@ -98,6 +98,7 @@ public class BranchesServiceImpl implements BranchesService {
         Integer offset
     ) {
         logger.info("enter to getBranchesList in BranchesServiceImpl");
+
         try {
             return webClient
                 .get()
@@ -119,22 +120,15 @@ public class BranchesServiceImpl implements BranchesService {
                         .queryParamIfPresent(Constants.OFFSET, Optional.ofNullable(offset))
                         .build()
                 )
-                .headers(h ->
-                    h.setBearerAuth(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY5MTkzMjAxLCJpYXQiOjE2NjkxOTI2MDEsImp0aSI6IjhhMzgyZWMzMTc5MjQ4NmNiZTZjOGNkNTA4OTVkNmEwIiwidXNlcl9pZCI6NiwiYWNjZXNzX3Rva2VuX2xpZmV0aW1lIjo2MDAsInVzZXJuYW1lIjoibW9iaW5fZXNiIn0.XIXe1aOQNRunZc50q844HKuT5fJagigEy5Gj5XeyjwA"
-                    )
-                )
+                .headers(h -> h.setBearerAuth(tokenRefresh.getAccessToken()))
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(body -> {
-                    BranchesListResponse branchesListResponse;
                     try {
-                        branchesListResponse = objectMapper.readValue(body, BranchesListResponse.class);
+                        return (objectMapper.readValue(body, BranchesListResponse.class));
                     } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
+                        throw new RuntimeException(e.getMessage());
                     }
-
-                    return ResponseEntity.status(HttpStatus.OK).body(branchesListResponse);
                 })
                 .doOnEach(logger::info)
                 .doOnError(logger::error)
@@ -144,7 +138,8 @@ public class BranchesServiceImpl implements BranchesService {
                         int statusCode = ((WebClientResponseException) error).getRawStatusCode();
                         throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
                     }
-                    return Mono.just(ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build());
+
+                    return Mono.error(error);
                 });
         } catch (Exception e) {
             logger.error("Exception in getBranchesList : {}", e.getMessage());
@@ -154,8 +149,9 @@ public class BranchesServiceImpl implements BranchesService {
     }
 
     @Override
-    public Mono<ResponseEntity<BranchesResponse>> getBranchesById(String appName, String token, Integer id) {
+    public Mono<BranchesResponse> getBranchesById(String appName, String token, Integer id) {
         logger.info("enter to getBranchesById in BranchesServiceImpl with id : {}", id);
+
         try {
             return webClient
                 .get()
@@ -166,23 +162,15 @@ public class BranchesServiceImpl implements BranchesService {
                         .path(branchesUrl.concat("{id}/")) //concat(Constants.BRACES_ID))
                         .build(id)
                 )
-                .headers(h ->
-                    h.setBearerAuth(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY5MTkzMjAxLCJpYXQiOjE2NjkxOTI2MDEsImp0aSI6IjhhMzgyZWMzMTc5MjQ4NmNiZTZjOGNkNTA4OTVkNmEwIiwidXNlcl9pZCI6NiwiYWNjZXNzX3Rva2VuX2xpZmV0aW1lIjo2MDAsInVzZXJuYW1lIjoibW9iaW5fZXNiIn0.XIXe1aOQNRunZc50q844HKuT5fJagigEy5Gj5XeyjwA"
-                    )
-                )
+                .headers(h -> h.setBearerAuth(tokenRefresh.getAccessToken()))
                 .retrieve()
                 .bodyToMono(String.class)
-                //.map(str -> ResponseEntity.status(HttpStatus.OK).body(gson.fromJson(str, BranchesResponse.class)))
-
                 .map(str -> {
-                    BranchesResponse branchesResponse;
                     try {
-                        branchesResponse = objectMapper.readValue(str, BranchesResponse.class);
+                        return objectMapper.readValue(str, BranchesResponse.class);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
-                    return ResponseEntity.status(HttpStatus.OK).body(branchesResponse);
                 })
                 .doOnEach(logger::info)
                 .doOnError(logger::error)
@@ -192,13 +180,8 @@ public class BranchesServiceImpl implements BranchesService {
                         int statusCode = ((WebClientResponseException) error).getRawStatusCode();
                         throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
                     }
-                    return Mono.just(ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build());
+                    return Mono.error(error);
                 });
-            //                .doOnEach(logger::info)
-            //                .doOnError(logger::error)
-            //                .onErrorResume(WebExchangeBindException.class,
-            //                    ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build()));
-
         } catch (Exception e) {
             logger.error("Exception in getBranchesById : {}", e.getMessage(), e);
             if (e instanceof WebClientResponseException) throw Problem
@@ -211,20 +194,17 @@ public class BranchesServiceImpl implements BranchesService {
     }
 
     @Override
-    public Mono<ResponseEntity<Object>> deleteBranchesById(String appName, String token, Integer id) {
+    public Mono<HttpStatus> deleteBranchesById(String appName, String token, Integer id) {
         logger.info("enter to apiBranchesDestroy in BranchesServiceImpl with id : {}", id);
+
         try {
             return webClient
                 .delete()
                 .uri(builder -> builder.scheme(Constants.HTTPS).host(baseUrl).path(branchesUrl.concat(Constants.BRACES_ID)).build(id))
-                .headers(h ->
-                    h.setBearerAuth(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY5MTkzMjAxLCJpYXQiOjE2NjkxOTI2MDEsImp0aSI6IjhhMzgyZWMzMTc5MjQ4NmNiZTZjOGNkNTA4OTVkNmEwIiwidXNlcl9pZCI6NiwiYWNjZXNzX3Rva2VuX2xpZmV0aW1lIjo2MDAsInVzZXJuYW1lIjoibW9iaW5fZXNiIn0.XIXe1aOQNRunZc50q844HKuT5fJagigEy5Gj5XeyjwA"
-                    )
-                )
+                .headers(h -> h.setBearerAuth(tokenRefresh.getAccessToken()))
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(str -> ResponseEntity.status(HttpStatus.OK).build())
+                .map(str -> HttpStatus.OK)
                 .doOnEach(logger::info)
                 .doOnError(logger::error)
                 .onErrorResume(error -> {
@@ -233,11 +213,55 @@ public class BranchesServiceImpl implements BranchesService {
                         int statusCode = ((WebClientResponseException) error).getRawStatusCode();
                         throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
                     }
-
-                    return Mono.just(ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build());
+                    return Mono.error(error);
                 });
         } catch (Exception e) {
             logger.error("Exception in deleteBranches : {}", e.getMessage());
+
+            throw Problem.builder().withStatus(Status.PRECONDITION_FAILED).build();
+        }
+    }
+
+    @Override
+    public Mono<BranchesResponse> updateBranchesById(
+        String appName,
+        String token,
+        Mono<BranchesRequestModel> branchesRequestModel,
+        Integer id
+    ) {
+        logger.info(
+            "enter to apiBranchesUpdate in BranchesServiceImpl with BranchesRequestModel : {} and id : {}",
+            branchesRequestModel,
+            id
+        );
+        try {
+            return webClient
+                .put()
+                .uri(builder -> builder.scheme(Constants.HTTPS).host(baseUrl).path(branchesUrl.concat(Constants.BRACES_ID)).build(id))
+                .headers(h -> h.setBearerAuth(tokenRefresh.getAccessToken()))
+                .body(branchesRequestModel, BranchesRequestModel.class)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(str -> {
+                    try {
+                        return (objectMapper.readValue(str, BranchesResponse.class));
+                    } catch (JsonProcessingException e) {
+                        logger.error("Exception in parsing object : {}", e.getMessage(), e);
+                        throw new RuntimeException(e.getMessage());
+                    }
+                })
+                .doOnEach(logger::info)
+                .doOnError(logger::error)
+                .onErrorResume(error -> {
+                    if (error instanceof WebClientResponseException) {
+                        String message = ((WebClientResponseException) error).getResponseBodyAsString();
+                        int statusCode = ((WebClientResponseException) error).getRawStatusCode();
+                        throw Problem.builder().withDetail(message).withStatus(Status.valueOf(statusCode)).build();
+                    }
+                    return Mono.error(error);
+                });
+        } catch (Exception e) {
+            logger.error("Exception in branchesUpdate : {}", e.getMessage());
 
             throw Problem.builder().withStatus(Status.PRECONDITION_FAILED).build();
         }

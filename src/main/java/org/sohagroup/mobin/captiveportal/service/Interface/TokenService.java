@@ -6,5 +6,5 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 public interface TokenService {
-    Mono<ResponseEntity<TokenResponseDTO>> getToken(TokenModelRequest tokenModel);
+    Mono<TokenResponseDTO> getToken(TokenModelRequest tokenModel);
 }

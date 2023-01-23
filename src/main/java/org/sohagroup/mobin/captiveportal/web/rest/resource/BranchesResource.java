@@ -7,7 +7,7 @@ import org.sohagroup.mobin.captiveportal.web.rest.api.BranchesApi;
 import org.sohagroup.mobin.captiveportal.web.rest.model.request.BranchesRequestModel;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesListResponse;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesResponse;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -28,7 +28,7 @@ public class BranchesResource implements BranchesApi {
     }
 
     @Override
-    public Mono<ResponseEntity<BranchesListResponse>> getBranchesList(
+    public Mono<BranchesListResponse> getBranchesList(
         String appName,
         String token,
         String categorycustomerCrmEnglishName,
@@ -55,17 +55,22 @@ public class BranchesResource implements BranchesApi {
     }
 
     @Override
-    public Mono<ResponseEntity<BranchesResponse>> getBranchesById(String appName, String token, Integer id) {
+    public Mono<BranchesResponse> getBranchesById(String appName, String token, Integer id) {
         return branchesService.getBranchesById(appName, token, id);
     }
 
     @Override
-    public Mono<ResponseEntity<Object>> deleteBranchesById(String appName, String token, Integer id) {
+    public Mono<HttpStatus> deleteBranchesById(String appName, String token, Integer id) {
         return branchesService.deleteBranchesById(appName, token, id);
     }
-    //    @Override
-    //    public Mono<BranchesResponse> updateBranchesById(String appName, String token, Mono<BranchesRequestModel> branchesRequestModel, Integer id) {
-    //        return branchesService.updateBranchesById(appName,token,branchesRequestModel,id);
-    //    }
 
+    @Override
+    public Mono<BranchesResponse> updateBranchesById(
+        String appName,
+        String token,
+        Mono<BranchesRequestModel> branchesRequestModel,
+        Integer id
+    ) {
+        return branchesService.updateBranchesById(appName, token, branchesRequestModel, id);
+    }
 }

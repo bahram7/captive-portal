@@ -21,7 +21,7 @@ public class TokenResource implements TokenApi {
     }
 
     @Override
-    public Mono<ResponseEntity<TokenResponseDTO>> getToken(TokenModelRequest tokenModel) {
+    public Mono<TokenResponseDTO> getToken(TokenModelRequest tokenModel) {
         logger.info("enter to getToken branches in TokenResource with TokenModelRequest:{}", tokenModel);
         return tokenService.getToken(tokenModel);
     }

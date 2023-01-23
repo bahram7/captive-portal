@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import org.sohagroup.mobin.captiveportal.web.rest.model.request.BranchesRequestModel;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesListResponse;
 import org.sohagroup.mobin.captiveportal.web.rest.model.response.BranchesResponse;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -23,7 +23,7 @@ public interface BranchesApi {
 
     @ApiOperation(value = "BranchesList")
     @GetMapping(value = "/api/branches")
-    public Mono<ResponseEntity<BranchesListResponse>> getBranchesList(
+    Mono<BranchesListResponse> getBranchesList(
         @ApiParam(value = "appName", required = true) @RequestHeader(value = "appName", required = true) String appName,
         @ApiParam(value = "token", required = true) @RequestHeader(value = "token", required = true) String token,
         @Parameter(name = "categorycustomercrm_english_name__contains", required = false) @RequestParam(
@@ -55,7 +55,7 @@ public interface BranchesApi {
     );
 
     @RequestMapping(method = RequestMethod.GET, value = "/api/branches/{id}/", produces = { "application/json" })
-    public Mono<ResponseEntity<BranchesResponse>> getBranchesById(
+    public Mono<BranchesResponse> getBranchesById(
         @ApiParam(value = "AppName", required = true) @RequestHeader(value = "AppName", required = true) String appName,
         @ApiParam(value = "Token", required = true) @RequestHeader(value = "Token", required = true) String token,
         @Parameter(name = "id", description = "A unique integer value identifying this branch.", required = true) @PathVariable(
@@ -64,23 +64,23 @@ public interface BranchesApi {
     );
 
     @RequestMapping(method = RequestMethod.DELETE, value = "/api/branches/{id}/", produces = { "application/json" })
-    public Mono<ResponseEntity<Object>> deleteBranchesById(
+    Mono<HttpStatus> deleteBranchesById(
         @ApiParam(value = "AppName", required = true) @RequestHeader(value = "AppName", required = true) String appName,
         @ApiParam(value = "Token", required = true) @RequestHeader(value = "Token", required = true) String token,
         @Parameter(name = "id", description = "A unique integer value identifying this branch.", required = true) @PathVariable(
             "id"
         ) Integer id
     );
-    //
-    //    @ApiOperation(value = "UpdateBranches")
-    //    @ApiResponses(value = {@ApiResponse(code = 200, message = "Success", response = BranchesResponse.class)})
-    //    @PutMapping (value = "/api/branches")
-    //    public Mono<BranchesResponse> updateBranchesById(
-    //        @ApiParam(value = "AppName", required = true)
-    //        @RequestHeader(value = "AppName", required = true) String appName,
-    //        @ApiParam(value = "Token", required = true)
-    //        @RequestHeader(value = "Token", required = true) String token,
-    //        @RequestBody Mono<BranchesRequestModel> branchesRequestModel,
-    //        @Parameter(name = "id", description = "A unique integer value identifying this branch.", required = true) @PathVariable("id") Integer id);
 
+    @ApiOperation(value = "UpdateBranches")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = BranchesResponse.class) })
+    @PutMapping(value = "/api/branches/{id}/")
+    public Mono<BranchesResponse> updateBranchesById(
+        @ApiParam(value = "AppName", required = true) @RequestHeader(value = "AppName", required = true) String appName,
+        @ApiParam(value = "Token", required = true) @RequestHeader(value = "Token", required = true) String token,
+        @RequestBody Mono<BranchesRequestModel> branchesRequestModel,
+        @Parameter(name = "id", description = "A unique integer value identifying this branch.", required = true) @PathVariable(
+            "id"
+        ) Integer id
+    );
 }
